@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Flappy Emoji - Secure Access</title>
+    <style>
+        :root {
+            --safe-top: env(safe-area-inset-top, 0px);
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+            --primary: #667eea;
+            --secondary: #764ba2;
+            --epic: #f1c40f;
+            --locked: #bdc3c7;
+            --success: #2ecc71;
+            --diamond: #3498db;
+            --danger: #e74c3c;
+            --pass: #ff0080;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: #000;
+            font-family: -apple-system, system-ui, sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            position: fixed;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+            background: #87ceeb;
+            overflow: hidden;
+        }
+
+        /* ===== LOGIN SCREEN ===== */
+        #login-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            z-index: 1500;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            padding-top: var(--safe-top);
+            padding-bottom: var(--safe-bottom);
+        }
+        #login-screen.hidden { display: none; }
+
+        .login-container {
+            background: rgba(255,255,255,0.95);
+            border-radius: 30px;
+            padding: 30px;
+            width: 100%;
+            max-width: 350px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        .login-icon { font-size: 4rem; margin-bottom: 15px; }
+        .login-title { font-size: 1.8rem; font-weight: 900; color: #333; margin-bottom: 10px; }
+        .login-subtitle { font-size: 0.9rem; color: #666; margin-bottom: 25px; line-height: 1.4; }
+
+        .login-input {
+            width: 100%;
+            padding: 16px;
+            border: 2px solid #ddd;
+            border-radius: 15px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 12px;
+            transition: border-color 0.3s;
+        }
+        .login-input:focus { outline: none; border-color: var(--primary); }
+        .login-input:disabled { background: #f0f0f0; color: #888; cursor: not-allowed; border-color: #eee; }
+
+        .login-btn {
+            width: 100%;
+            padding: 16px;
+            background: var(--success);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            font-weight: 900;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 0 #229954;
+            transition: transform 0.1s;
+            margin-top: 10px;
+        }
+        .login-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #229954; }
+
+        .login-error {
+            color: var(--danger);
+            font-size: 0.9rem;
+            font-weight: bold;
+            margin-top: 10px;
+            display: none;
+        }
+        .login-error.show { display: block; }
+
+        .login-contact {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            font-size: 0.85rem;
+            color: #666;
+        }
+        .login-contact strong { color: var(--primary); }
+
+        /* ===== SPLASH SCREEN ===== */
+        #splash-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-align: center;
+        }
+        #splash-screen.hidden { display: none; }
+        .splash-icon { font-size: 5rem; margin-bottom: 20px; animation: bounce 2s infinite; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+        .beta-tag {
+            position: absolute;
+            top: calc(20px + var(--safe-top));
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px 10px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: 900;
+            letter-spacing: 1px;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* ===== MENU PRINCIPAL ===== */
+        #menu-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            z-index: 100;
+            padding-top: var(--safe-top);
+            padding-bottom: var(--safe-bottom);
+        }
+        #menu-screen.hidden { display: none; }
+
+        .menu-header {
+            padding: 15px 15px 5px;
+            text-align: center;
+            flex-shrink: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .menu-title {
+            font-size: 2rem;
+            font-weight: 900;
+            color: white;
+            text-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            letter-spacing: -1px;
+            flex: 1;
+        }
+        .logout-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            backdrop-filter: blur(5px);
+        }
+
+        .player-welcome {
+            text-align: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-top: -5px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .stats-container {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .stat-badge {
+            background: rgba(255,255,255,0.2);
+            backdrop-filter: blur(5px);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .menu-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 10px 20px;
+        }
+
+        .current-selection-display {
+            background: rgba(255,255,255,0.15);
+            padding: 15px;
+            border-radius: 30px;
+            text-align: center;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 240px;
+        }
+        .current-emoji { font-size: 4rem; margin-bottom: 5px; }
+        .current-pipe-name { color: white; font-weight: bold; opacity: 0.9; font-size: 0.9rem; }
+
+        .menu-pass-preview {
+            width: 100%;
+            max-width: 300px;
+            background: rgba(0,0,0,0.3);
+            padding: 12px;
+            border-radius: 20px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .pass-info-row { display: flex; justify-content: space-between; color: white; font-size: 0.8rem; font-weight: bold; margin-bottom: 8px; }
+        .pass-bar-bg { width: 100%; height: 10px; background: rgba(255,255,255,0.2); border-radius: 5px; overflow: hidden; }
+        .pass-bar-fill { height: 100%; background: linear-gradient(90deg, var(--pass), #ff8000); width: 0%; transition: width 0.5s; }
+
+        .action-buttons-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: 10px;
+            width: 100%;
+            max-width: 380px;
+            padding: 0 10px;
+            margin-bottom: 10px;
+        }
+        .action-buttons-bottom {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            width: 100%;
+            max-width: 380px;
+            padding: 0 10px;
+            margin-bottom: 20px;
+        }
+
+        .btn-main {
+            height: 60px;
+            border: none;
+            border-radius: 18px;
+            font-weight: 900;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.1s;
+            box-shadow: 0 5px 0 rgba(0,0,0,0.2);
+        }
+        .btn-main:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0,0,0,0.2); }
+
+        #play-btn { background: var(--success); font-size: 1.2rem; }
+        #shop-btn { background: var(--epic); font-size: 1.6rem; }
+        #settings-btn { background: rgba(255,255,255,0.2); font-size: 1.6rem; backdrop-filter: blur(5px); }
+        #pass-btn { background: var(--pass); font-size: 1rem; grid-column: span 2; height: 50px; }
+
+        /* ===== MODALES ===== */
+        .modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.92);
+            z-index: 500;
+            display: none;
+            flex-direction: column;
+            padding-top: var(--safe-top);
+            padding-bottom: var(--safe-bottom);
+        }
+        .modal-overlay.active { display: flex; }
+
+        .modal-header {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+        }
+        .modal-close { font-size: 2rem; padding: 10px; }
+
+        .modal-scroll-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px 15px 30px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .pass-level-card {
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 15px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border: 1px solid rgba(255,255,255,0.05);
+            position: relative;
+        }
+        .pass-level-card.unlocked { background: rgba(46, 204, 113, 0.15); border-color: var(--success); }
+        .level-number {
+            width: 50px;
+            height: 50px;
+            background: var(--pass);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            color: white;
+            flex-shrink: 0;
+            font-size: 1.2rem;
+            border: 3px solid rgba(255,255,255,0.2);
+            box-shadow: 0 0 10px rgba(255, 0, 128, 0.3);
+        }
+        .reward-info { flex: 1; color: white; }
+        .reward-name { font-weight: bold; font-size: 1rem; }
+        .reward-type { font-size: 0.75rem; opacity: 0.7; }
+        .reward-icon { font-size: 2rem; }
+
+        .selection-section { background: rgba(255, 255, 255, 0.95); border-radius: 20px; padding: 15px; margin-bottom: 20px; }
+        .section-title { font-size: 1rem; font-weight: 800; color: #444; margin-bottom: 12px; text-transform: uppercase; }
+        .grid-container { display: grid; gap: 10px; }
+        .emoji-grid { grid-template-columns: repeat(4, 1fr); }
+        .pipe-grid { grid-template-columns: repeat(3, 1fr); }
+        .item-card { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #f8f9fa; border: 3px solid transparent; border-radius: 15px; position: relative; transition: all 0.2s; }
+        .item-card.selected { border-color: var(--primary); background: #fff; }
+        .item-card.locked { opacity: 0.6; background: #eee; }
+        .item-card.epic { background: linear-gradient(135deg, #fff 0%, #fff9e6 100%); border-style: dashed; border-color: var(--epic); }
+        .item-card.purchasable { animation: pulse-gold 1.5s infinite; border-color: var(--epic); opacity: 1; }
+        @keyframes pulse-gold { 0% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.4); } 50% { box-shadow: 0 0 20px 5px rgba(241, 196, 15, 0.6); } 100% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.4); } }
+        .lock-icon { position: absolute; top: 5px; right: 5px; font-size: 0.7rem; }
+        .item-emoji { font-size: 1.8rem; }
+        .item-name { font-size: 0.7rem; font-weight: bold; margin-top: 4px; color: #333; text-align: center; }
+        .item-cost { font-size: 0.65rem; font-weight: bold; margin-top: 2px; }
+        .cost-score { color: var(--danger); }
+        .cost-diamond { color: var(--diamond); }
+        .preview-box { width: 75%; height: 18px; border-radius: 4px; margin-top: 4px; }
+
+        .settings-list { display: flex; flex-direction: column; gap: 15px; }
+        .setting-item {
+            background: rgba(255,255,255,0.95);
+            padding: 20px;
+            border-radius: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .setting-label { font-weight: 800; color: #333; font-size: 1.1rem; }
+        
+        .switch { position: relative; display: inline-block; width: 60px; height: 34px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--success); }
+        input:checked + .slider:before { transform: translateX(26px); }
+
+        .btn-reset {
+            width: 100%;
+            padding: 20px;
+            background: var(--danger);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            font-weight: 900;
+            font-size: 1.1rem;
+            margin-top: 20px;
+            box-shadow: 0 4px 0 #c0392b;
+        }
+
+        .popup-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; display: none; align-items: center; justify-content: center; padding: 20px; }
+        .popup-overlay.active { display: flex; }
+        .popup-modal { background: white; width: 100%; max-width: 300px; border-radius: 35px; padding: 30px; text-align: center; animation: pop-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes pop-in { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .popup-icon { font-size: 5rem; margin: 20px 0; }
+        .popup-title { font-size: 1.5rem; font-weight: 900; color: #333; margin-bottom: 10px; }
+        .popup-desc { font-size: 1rem; color: #666; margin-bottom: 25px; line-height: 1.4; }
+        .popup-btns { display: grid; gap: 10px; }
+        .btn-confirm { background: var(--epic); color: white; padding: 18px; border-radius: 20px; border: none; font-weight: 900; font-size: 1.1rem; box-shadow: 0 4px 0 #d4af37; }
+        .btn-confirm.danger { background: var(--danger); box-shadow: 0 4px 0 #c0392b; }
+        .btn-cancel { background: #f1f2f6; color: #666; padding: 15px; border-radius: 20px; border: none; font-weight: bold; }
+
+        #game-screen { display: none; width: 100%; height: 100%; position: relative; }
+        #game-screen.active { display: block; }
+        #canvas { width: 100%; height: 100%; display: block; }
+        #ui-container { position: absolute; top: calc(20px + var(--safe-top)); width: 100%; display: flex; flex-direction: column; align-items: center; pointer-events: none; z-index: 10; }
+        #score-display { font-size: 5rem; font-weight: 900; color: white; text-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        #diamond-display-game { background: rgba(0,0,0,0.3); color: white; padding: 5px 15px; border-radius: 20px; font-weight: bold; display: flex; align-items: center; gap: 5px; }
+
+        #gameover-screen { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
+        #gameover-screen.active { display: flex; }
+        .modal { background: white; width: 100%; max-width: 320px; border-radius: 30px; padding: 30px; text-align: center; }
+        .modal h1 { color: var(--danger); font-size: 2rem; margin-bottom: 15px; }
+        .score-val { font-size: 3.5rem; font-weight: 900; color: #333; }
+        .modal-btns { display: grid; gap: 12px; margin-top: 25px; }
+        .modal-btns button { padding: 18px; border: none; border-radius: 18px; font-weight: bold; font-size: 1.1rem; }
+        #retry-btn { background: var(--success); color: white; }
+        #menu-btn-over { background: #f1f2f6; color: #333; }
+
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <!-- LOGIN SCREEN -->
+        <div id="login-screen">
+            <div class="login-container">
+                <div class="login-icon">🎫</div>
+                <h1 class="login-title">FLAPPY EMOJI</h1>
+                <p class="login-subtitle">Connectez-vous à votre partie</p>
+                <input type="text" id="access-code" class="login-input" placeholder="Code d'accès" maxlength="15" autocomplete="off">
+                <input type="text" id="player-nickname" class="login-input" placeholder="Votre Pseudo" maxlength="12" autocomplete="off">
+                <button id="login-btn" class="login-btn">ACCÉDER</button>
+                <div id="login-error" class="login-error"></div>
+                <div class="login-contact">
+                    Besoin d'un code ?<br>
+                    Contactez : <strong>k3487725@gmail.com</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- SPLASH -->
+        <div id="splash-screen" class="hidden">
+            <div class="beta-tag">VERSION BÊTA</div>
+            <div class="splash-icon">🐣</div>
+            <h1 style="font-size: 2.5rem; font-weight: 900; margin-bottom: 10px;">FLAPPY EMOJI</h1>
+            <p style="font-size: 1.2rem; opacity: 0.8;">Toucher pour commencer</p>
+        </div>
+
+        <!-- MENU -->
+        <div id="menu-screen" class="hidden">
+            <div class="menu-header">
+                <h1 class="menu-title">FLAPPY EMOJI</h1>
+                <button id="logout-btn" class="logout-btn">QUITTER</button>
+            </div>
+            
+            <div class="player-welcome">Salut, <span id="display-nickname">Joueur</span> !</div>
+
+            <div style="text-align: center;">
+                <div class="stats-container">
+                    <div class="stat-badge">🏆 <span id="menu-best-score">0</span></div>
+                    <div class="stat-badge">💎 <span id="menu-diamonds">0</span></div>
+                    <div class="stat-badge" style="background:var(--pass)">⭐ <span id="menu-level">0</span></div>
+                </div>
+            </div>
+            
+            <div class="menu-content">
+                <div class="current-selection-display">
+                    <div class="current-emoji" id="main-emoji-view">😁</div>
+                    <div class="current-pipe-name" id="main-pipe-view">Tuyau: Classique</div>
+                </div>
+
+                <div class="menu-pass-preview">
+                    <div class="pass-info-row">
+                        <span>PASS EMOJI - NIV. <span id="pass-preview-level">0</span></span>
+                        <span id="pass-preview-xp">0 / 100 XP</span>
+                    </div>
+                    <div class="pass-bar-bg">
+                        <div class="pass-bar-fill" id="pass-preview-bar"></div>
+                    </div>
+                </div>
+
+                <div class="action-buttons-grid">
+                    <button id="settings-btn" class="btn-main">⚙️</button>
+                    <button id="play-btn" class="btn-main">JOUER</button>
+                    <button id="shop-btn" class="btn-main">🛒</button>
+                </div>
+                <div class="action-buttons-bottom">
+                    <button id="pass-btn" class="btn-main">🎫 PASS EMOJI</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODALE PASS -->
+        <div id="pass-modal" class="modal-overlay">
+            <div class="modal-header">
+                <h2 style="font-size: 1.5rem; font-weight: 900;">PASS EMOJI</h2>
+                <div class="modal-close" id="close-pass">✕</div>
+            </div>
+            <div class="modal-scroll-area" id="pass-list"></div>
+        </div>
+
+        <!-- MODALE BOUTIQUE -->
+        <div id="shop-modal" class="modal-overlay">
+            <div class="modal-header">
+                <h2 style="font-size: 1.5rem; font-weight: 900;">BOUTIQUE</h2>
+                <div class="modal-close" id="close-shop">✕</div>
+            </div>
+            <div class="modal-scroll-area">
+                <div class="selection-section">
+                    <div class="section-title">🎭 Emojis</div>
+                    <div class="grid-container emoji-grid" id="emoji-grid"></div>
+                </div>
+                <div class="selection-section">
+                    <div class="section-title">🔧 Tuyaux</div>
+                    <div class="grid-container pipe-grid" id="pipe-grid"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODALE PARAMÈTRES -->
+        <div id="settings-modal" class="modal-overlay">
+            <div class="modal-header">
+                <h2 style="font-size: 1.5rem; font-weight: 900;">PARAMÈTRES</h2>
+                <div class="modal-close" id="close-settings">✕</div>
+            </div>
+            <div class="modal-scroll-area">
+                <div class="settings-list">
+                    <div class="setting-item">
+                        <div class="setting-label">Sons & Musique</div>
+                        <label class="switch">
+                            <input type="checkbox" id="sound-toggle" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <button class="btn-reset" id="trigger-reset-btn">RÉINITIALISER LE JEU</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- POPUPS -->
+        <div id="purchase-popup" class="popup-overlay">
+            <div class="popup-modal">
+                <div class="popup-icon" id="pop-preview">🤖</div>
+                <h2 class="popup-title" id="pop-title">Robot</h2>
+                <p class="popup-desc" id="pop-desc">Voulez-vous acheter cet item pour 10 diamants ?</p>
+                <div class="popup-btns">
+                    <button class="btn-confirm" id="confirm-buy">ACHETER 💎</button>
+                    <button class="btn-cancel" id="cancel-buy">ANNULER</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="reset-popup" class="popup-overlay">
+            <div class="popup-modal">
+                <div class="popup-icon">⚠️</div>
+                <h2 class="popup-title">RÉINITIALISER ?</h2>
+                <p class="popup-desc">Entrez le code maître pour supprimer toutes les données de ce compte.</p>
+                <input type="password" id="master-code-input" class="login-input" placeholder="Code Maître" style="margin-bottom: 20px;">
+                <div class="popup-btns">
+                    <button class="btn-confirm danger" id="confirm-reset">TOUT SUPPRIMER</button>
+                    <button class="btn-cancel" id="cancel-reset">ANNULER</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- JEU -->
+        <div id="game-screen">
+            <div id="ui-container">
+                <div id="score-display">0</div>
+                <div id="diamond-display-game">💎 <span id="game-diamonds">0</span></div>
+            </div>
+            <canvas id="canvas"></canvas>
+            <div id="gameover-screen">
+                <div class="modal">
+                    <h1 id="gameover-title">FIN</h1>
+                    <div class="score-val" id="final-score">0</div>
+                    <div style="color:#888; font-size:1rem; margin-top:5px">RECORD: <span id="game-best-score">0</span></div>
+                    <div style="color:#3498db; font-size:1rem; font-weight:bold">DIAMANTS: <span id="game-final-diamonds">0</span></div>
+                    <div style="color:var(--pass); font-size:1rem; font-weight:bold; margin-top:5px">XP GAGNÉ: <span id="game-xp-gain">0</span></div>
+                    <div class="modal-btns">
+                        <button id="retry-btn">REESSAYER</button>
+                        <button id="menu-btn-over">MENU</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // VALID ACCESS CODES
+        const VALID_CODES = Array.from({length: 20}, (_, i) => `EMOJI${String(i + 1).padStart(3, '0')}`);
+        const MASTER_CODE = "2026";
+        let currentAccessCode = localStorage.getItem('flappyEmojiCurrentCode') || null;
+        let playerNickname = "";
+
+        // LOGIN LOGIC
+        const loginScreen = document.getElementById('login-screen');
+        const accessCodeInput = document.getElementById('access-code');
+        const nicknameInput = document.getElementById('player-nickname');
+        const loginBtn = document.getElementById('login-btn');
+        const loginError = document.getElementById('login-error');
+
+        accessCodeInput.addEventListener('input', () => {
+            const code = accessCodeInput.value.trim().toUpperCase();
+            if (VALID_CODES.includes(code)) {
+                const savedNick = localStorage.getItem(code + '_flappyEmojiNickname');
+                if (savedNick) {
+                    nicknameInput.value = savedNick;
+                    nicknameInput.disabled = true;
+                } else {
+                    nicknameInput.value = "";
+                    nicknameInput.disabled = false;
+                }
+            } else {
+                nicknameInput.value = "";
+                nicknameInput.disabled = false;
+            }
+        });
+
+        function validateAndLogin() {
+            const code = accessCodeInput.value.trim().toUpperCase();
+            const nick = nicknameInput.value.trim();
+
+            if (!VALID_CODES.includes(code)) {
+                loginError.textContent = '❌ Code d\'accès invalide.';
+                loginError.classList.add('show');
+                return;
+            }
+
+            if (nick.length < 2) {
+                loginError.textContent = '❌ Pseudo trop court (min 2 car.).';
+                loginError.classList.add('show');
+                return;
+            }
+
+            currentAccessCode = code;
+            playerNickname = nick;
+            localStorage.setItem('flappyEmojiCurrentCode', currentAccessCode);
+            
+            if (!localStorage.getItem(getStorageKey('flappyEmojiNickname'))) {
+                localStorage.setItem(getStorageKey('flappyEmojiNickname'), playerNickname);
+            }
+            
+            loginScreen.classList.add('hidden');
+            splashScreen.classList.remove('hidden');
+            gameState = 'SPLASH';
+            loginError.classList.remove('show');
+            setTimeout(() => playBackgroundMusic(), 500);
+        }
+
+        loginBtn.onclick = validateAndLogin;
+
+        // DATA
+        const emojis = [
+            { char: '😁', type: 'score', cost: 0, name: 'Sourire' },
+            { char: '😅', type: 'score', cost: 50, name: 'Sueur' },
+            { char: '🤣', type: 'score', cost: 100, name: 'MDR' },
+            { char: '😂', type: 'score', cost: 150, name: 'Rire' },
+            { char: '😎', type: 'score', cost: 300, name: 'Cool' },
+            { char: '🥰', type: 'score', cost: 500, name: 'Amour' },
+            { char: '🤖', type: 'diamond', cost: 10, epic: true, name: 'Robot' },
+            { char: '🦄', type: 'diamond', cost: 25, epic: true, name: 'Licorne' },
+            { char: '🐲', type: 'diamond', cost: 50, epic: true, name: 'Dragon' },
+            { char: '👑', type: 'diamond', cost: 100, epic: true, name: 'Roi' },
+            { char: '👻', type: 'pass', level: 5, name: 'Fantôme' },
+            { char: '👽', type: 'pass', level: 10, name: 'Alien' }
+        ];
+
+        const pipes_data = [
+            { name: 'Classique', color: '#2ecc71', border: '#27ae60', type: 'score', cost: 0 },
+            { name: 'Métal', color: '#95a5a6', border: '#7f8c8d', type: 'score', cost: 50 },
+            { name: 'Or', color: '#f1c40f', border: '#d4af37', type: 'score', cost: 150 },
+            { name: 'Lave', color: '#e67e22', border: '#d35400', type: 'diamond', cost: 15, epic: true },
+            { name: 'Cristal', color: '#3498db', border: '#2980b9', type: 'diamond', cost: 30, epic: true },
+            { name: 'Néon', color: '#9b59b6', border: '#8e44ad', type: 'diamond', cost: 60, epic: true },
+            { name: 'Arc-en-ciel', color: 'rainbow', border: '#fff', type: 'pass', level: 15 }
+        ];
+
+        const pass_rewards = [
+            { level: 1, type: 'diamond', amount: 5, icon: '💎' },
+            { level: 2, type: 'diamond', amount: 10, icon: '💎' },
+            { level: 3, type: 'diamond', amount: 15, icon: '💎' },
+            { level: 4, type: 'diamond', amount: 20, icon: '💎' },
+            { level: 5, type: 'emoji', index: 10, icon: '👻' },
+            { level: 6, type: 'diamond', amount: 30, icon: '💎' },
+            { level: 7, type: 'diamond', amount: 40, icon: '💎' },
+            { level: 8, type: 'diamond', amount: 50, icon: '💎' },
+            { level: 9, type: 'diamond', amount: 100, icon: '💎' },
+            { level: 10, type: 'emoji', index: 11, icon: '👽' }
+        ];
+
+        // STATE
+        function getStorageKey(key) {
+            return currentAccessCode ? `${currentAccessCode}_${key}` : key;
+        }
+
+        let selectedEmoji = 0, selectedPipe = 0;
+        let score = 0, bestScore = 0;
+        let totalDiamonds = 0;
+        let unlockedItems = { emojis: [0], pipes: [0] };
+        let soundEnabled = true;
+        let xp = 0;
+        let level = 0;
+        let gameState = 'LOGIN';
+        let pendingPurchase = null;
+
+        function loadPlayerData() {
+            playerNickname = localStorage.getItem(getStorageKey('flappyEmojiNickname')) || "Joueur";
+            bestScore = parseInt(localStorage.getItem(getStorageKey('flappyEmojiBestScore'))) || 0;
+            totalDiamonds = parseInt(localStorage.getItem(getStorageKey('flappyEmojiDiamonds'))) || 0;
+            unlockedItems = JSON.parse(localStorage.getItem(getStorageKey('flappyEmojiUnlocked'))) || { emojis: [0], pipes: [0] };
+            soundEnabled = localStorage.getItem(getStorageKey('flappyEmojiSound')) !== 'false';
+            xp = parseInt(localStorage.getItem(getStorageKey('flappyEmojiXP'))) || 0;
+            level = Math.floor(xp / 100);
+            selectedEmoji = parseInt(localStorage.getItem(getStorageKey('flappyEmojiSelectedEmoji'))) || 0;
+            selectedPipe = parseInt(localStorage.getItem(getStorageKey('flappyEmojiSelectedPipe'))) || 0;
+        }
+
+        function saveData() {
+            localStorage.setItem(getStorageKey('flappyEmojiBestScore'), bestScore);
+            localStorage.setItem(getStorageKey('flappyEmojiDiamonds'), totalDiamonds);
+            localStorage.setItem(getStorageKey('flappyEmojiUnlocked'), JSON.stringify(unlockedItems));
+            localStorage.setItem(getStorageKey('flappyEmojiSound'), soundEnabled);
+            localStorage.setItem(getStorageKey('flappyEmojiXP'), xp);
+            localStorage.setItem(getStorageKey('flappyEmojiSelectedEmoji'), selectedEmoji);
+            localStorage.setItem(getStorageKey('flappyEmojiSelectedPipe'), selectedPipe);
+        }
+
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const splashScreen = document.getElementById('splash-screen');
+        const menuScreen = document.getElementById('menu-screen');
+        const shopModal = document.getElementById('shop-modal');
+        const passModal = document.getElementById('pass-modal');
+        const settingsModal = document.getElementById('settings-modal');
+        const purchasePopup = document.getElementById('purchase-popup');
+        const resetPopup = document.getElementById('reset-popup');
+        const gameScreen = document.getElementById('game-screen');
+        const gameoverScreen = document.getElementById('gameover-screen');
+        const scoreDisplay = document.getElementById('score-display');
+        const menuDiamonds = document.getElementById('menu-diamonds');
+        const gameDiamonds = document.getElementById('game-diamonds');
+        const soundToggle = document.getElementById('sound-toggle');
+        const logoutBtn = document.getElementById('logout-btn');
+
+        // AUDIO
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let musicInterval;
+        
+        function playBackgroundMusic() {
+            if (!soundEnabled) return;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            if (musicInterval) return;
+            const notes = [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25];
+            const melody = [0, 2, 4, 0, 0, 2, 4, 0, 4, 5, 7, 4, 5, 7];
+            let step = 0;
+            musicInterval = setInterval(() => {
+                if (gameState === 'GAMEOVER' || !soundEnabled) return;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(notes[melody[step % melody.length]], audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.02, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.2);
+                step++;
+            }, 250);
+        }
+
+        function stopBackgroundMusic() { if (musicInterval) { clearInterval(musicInterval); musicInterval = null; } }
+
+        function playSound(freq, type = 'sine', duration = 0.1) {
+            if (!soundEnabled) return;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            if (freq === 440) osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + duration);
+            if (freq === 220) osc.frequency.exponentialRampToValueAtTime(55, audioCtx.currentTime + duration);
+            if (freq === 660) osc.frequency.exponentialRampToValueAtTime(1320, audioCtx.currentTime + duration);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        // UI & SHOP
+        function initUI() {
+            document.getElementById('display-nickname').textContent = playerNickname;
+            document.getElementById('menu-best-score').textContent = bestScore;
+            menuDiamonds.textContent = totalDiamonds;
+            document.getElementById('menu-level').textContent = level;
+            document.getElementById('main-emoji-view').textContent = emojis[selectedEmoji].char;
+            document.getElementById('main-pipe-view').textContent = "Tuyau: " + pipes_data[selectedPipe].name;
+            soundToggle.checked = soundEnabled;
+
+            const currentXP = xp % 100;
+            document.getElementById('pass-preview-level').textContent = level;
+            document.getElementById('pass-preview-xp').textContent = `${currentXP} / 100 XP`;
+            document.getElementById('pass-preview-bar').style.width = `${currentXP}%`;
+            
+            const eGrid = document.getElementById('emoji-grid');
+            eGrid.innerHTML = '';
+            emojis.forEach((e, i) => {
+                const isUnlocked = unlockedItems.emojis.includes(i) || 
+                                 (e.type === 'score' && bestScore >= e.cost) ||
+                                 (e.type === 'pass' && level >= e.level);
+                const isPurchasable = !isUnlocked && e.type === 'diamond' && totalDiamonds >= e.cost;
+                const div = document.createElement('div');
+                div.className = `item-card ${i === selectedEmoji ? 'selected' : ''} ${!isUnlocked ? 'locked' : ''} ${e.epic ? 'epic' : ''} ${isPurchasable ? 'purchasable' : ''}`;
+                let costHTML = e.type === 'score' ? `<span class="cost-score">${e.cost} pts</span>` : 
+                               e.type === 'pass' ? `<span style="color:var(--pass)">Niv. ${e.level}</span>` :
+                               `<span class="cost-diamond">💎 ${e.cost}</span>`;
+                if (isUnlocked) costHTML = '<span style="color:#2ecc71">Débloqué</span>';
+                div.innerHTML = `${!isUnlocked ? '<span class="lock-icon">🔒</span>' : ''}<div class="item-emoji">${e.char}</div><div class="item-cost">${costHTML}</div>`;
+                div.onclick = () => {
+                    if (isUnlocked) { selectedEmoji = i; saveData(); initUI(); }
+                    else if (e.type === 'diamond' && totalDiamonds >= e.cost) showPurchasePopup('emoji', i);
+                };
+                eGrid.appendChild(div);
+            });
+
+            const pGrid = document.getElementById('pipe-grid');
+            pGrid.innerHTML = '';
+            pipes_data.forEach((p, i) => {
+                const isUnlocked = unlockedItems.pipes.includes(i) || 
+                                 (p.type === 'score' && bestScore >= p.cost) ||
+                                 (p.type === 'pass' && level >= p.level);
+                const isPurchasable = !isUnlocked && p.type === 'diamond' && totalDiamonds >= p.cost;
+                const div = document.createElement('div');
+                div.className = `item-card ${i === selectedPipe ? 'selected' : ''} ${!isUnlocked ? 'locked' : ''} ${p.epic ? 'epic' : ''} ${isPurchasable ? 'purchasable' : ''}`;
+                let costHTML = p.type === 'score' ? `<span class="cost-score">${p.cost} pts</span>` : 
+                               p.type === 'pass' ? `<span style="color:var(--pass)">Niv. ${p.level}</span>` :
+                               `<span class="cost-diamond">💎 ${p.cost}</span>`;
+                if (isUnlocked) costHTML = '<span style="color:#2ecc71">Débloqué</span>';
+                div.innerHTML = `${!isUnlocked ? '<span class="lock-icon">🔒</span>' : ''}<div class="item-name">${p.name}</div><div class="preview-box" style="background:${p.color === 'rainbow' ? 'linear-gradient(to right, red, orange, yellow, green, blue, violet)' : p.color};border:1px solid ${p.border}"></div><div class="item-cost">${costHTML}</div>`;
+                div.onclick = () => {
+                    if (isUnlocked) { selectedPipe = i; saveData(); initUI(); }
+                    else if (p.type === 'diamond' && totalDiamonds >= p.cost) showPurchasePopup('pipe', i);
+                };
+                pGrid.appendChild(div);
+            });
+            initPassUI();
+        }
+
+        function initPassUI() {
+            const passList = document.getElementById('pass-list');
+            passList.innerHTML = '';
+            pass_rewards.forEach(r => {
+                const isUnlocked = level >= r.level;
+                const div = document.createElement('div');
+                div.className = `pass-level-card ${isUnlocked ? 'unlocked' : ''}`;
+                div.innerHTML = `
+                    <div class="level-number">${r.level}</div>
+                    <div class="reward-info">
+                        <div class="reward-name">${r.type === 'diamond' ? r.amount + ' Diamants' : emojis[r.index].name}</div>
+                        <div class="reward-type">${isUnlocked ? 'DÉBLOQUÉ' : 'VERROUILLÉ'}</div>
+                    </div>
+                    <div class="reward-icon">${r.icon}</div>
+                `;
+                passList.appendChild(div);
+            });
+        }
+
+        function showPurchasePopup(type, index) {
+            const item = type === 'emoji' ? emojis[index] : pipes_data[index];
+            pendingPurchase = { type, index, cost: item.cost };
+            document.getElementById('pop-preview').innerHTML = type === 'emoji' ? item.char : `<div style="width:60px;height:30px;background:${item.color === 'rainbow' ? 'linear-gradient(to right, red, orange, yellow, green, blue, violet)' : item.color};border:2px solid ${item.border};border-radius:8px;margin:0 auto"></div>`;
+            document.getElementById('pop-title').textContent = item.name;
+            document.getElementById('pop-desc').textContent = `Voulez-vous acheter cet item pour ${item.cost} diamants ?`;
+            purchasePopup.classList.add('active');
+        }
+
+        document.getElementById('confirm-buy').onclick = () => {
+            if (pendingPurchase && totalDiamonds >= pendingPurchase.cost) {
+                totalDiamonds -= pendingPurchase.cost;
+                if (pendingPurchase.type === 'emoji') unlockedItems.emojis.push(pendingPurchase.index);
+                else unlockedItems.pipes.push(pendingPurchase.index);
+                playSound(660, 'sine', 0.3);
+                saveData();
+                initUI();
+                purchasePopup.classList.remove('active');
+                pendingPurchase = null;
+            }
+        };
+
+        document.getElementById('cancel-buy').onclick = () => { purchasePopup.classList.remove('active'); pendingPurchase = null; };
+
+        // RESET LOGIC
+        document.getElementById('trigger-reset-btn').onclick = () => {
+            document.getElementById('master-code-input').value = "";
+            resetPopup.classList.add('active');
+        };
+        document.getElementById('cancel-reset').onclick = () => resetPopup.classList.remove('active');
+        document.getElementById('confirm-reset').onclick = () => {
+            const inputCode = document.getElementById('master-code-input').value;
+            if (inputCode === MASTER_CODE) {
+                const keysToDelete = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key.startsWith(currentAccessCode + '_')) {
+                        keysToDelete.push(key);
+                    }
+                }
+                keysToDelete.forEach(key => localStorage.removeItem(key));
+                location.reload();
+            } else {
+                alert("❌ Code Maître incorrect !");
+                document.getElementById('master-code-input').value = "";
+            }
+        };
+
+        // GAME LOGIC
+        let ww, wh, player, pipes, lastTime, pipeTimer;
+        const PIPE_WIDTH = 65, PIPE_GAP = 190, PIPE_SPEED = 3.8, PIPE_SPAWN = 1400;
+
+        function resize() { ww = canvas.width = window.innerWidth; wh = canvas.height = window.innerHeight; }
+
+        function startGame() {
+            gameState = 'PLAYING';
+            menuScreen.classList.add('hidden');
+            gameScreen.classList.add('active');
+            gameoverScreen.classList.remove('active');
+            score = 0;
+            scoreDisplay.textContent = '0';
+            gameDiamonds.textContent = totalDiamonds;
+            player = { x: ww * 0.2, y: wh / 2, v: 0, g: 0.45, j: -8.5, s: 42 };
+            pipes = [];
+            pipeTimer = 0;
+            lastTime = performance.now();
+            playBackgroundMusic();
+            requestAnimationFrame(loop);
+        }
+
+        function loop(t) {
+            if (gameState !== 'PLAYING') return;
+            const dt = Math.min((t - lastTime) / 16.67, 2);
+            lastTime = t;
+            player.v += player.g * dt;
+            player.y += player.v * dt;
+            pipeTimer += (16.67 * dt);
+            if (pipeTimer > PIPE_SPAWN) {
+                const h = Math.random() * (wh - PIPE_GAP - 150) + 75;
+                pipes.push({ x: ww, h: h, passed: false });
+                pipeTimer = 0;
+            }
+            for (let i = pipes.length - 1; i >= 0; i--) {
+                const p = pipes[i];
+                p.x -= PIPE_SPEED * dt;
+                if (player.x + 18 > p.x && player.x - 18 < p.x + PIPE_WIDTH) {
+                    if (player.y - 18 < p.h || player.y + 18 > p.h + PIPE_GAP) return endGame();
+                }
+                if (!p.passed && p.x + PIPE_WIDTH < player.x) {
+                    p.passed = true;
+                    score++;
+                    scoreDisplay.textContent = score;
+                    playSound(440);
+                    if (score % 15 === 0) {
+                        totalDiamonds++;
+                        gameDiamonds.textContent = totalDiamonds;
+                    }
+                }
+                if (p.x + PIPE_WIDTH < 0) pipes.splice(i, 1);
+            }
+            if (player.y + 20 > wh || player.y - 20 < 0) return endGame();
+            draw();
+            requestAnimationFrame(loop);
+        }
+
+        function draw() {
+            ctx.fillStyle = '#87ceeb';
+            ctx.fillRect(0, 0, ww, wh);
+            const pStyle = pipes_data[selectedPipe];
+            pipes.forEach(p => {
+                if (pStyle.color === 'rainbow') {
+                    const grad = ctx.createLinearGradient(p.x, 0, p.x + PIPE_WIDTH, 0);
+                    grad.addColorStop(0, 'red'); grad.addColorStop(0.2, 'orange'); grad.addColorStop(0.4, 'yellow');
+                    grad.addColorStop(0.6, 'green'); grad.addColorStop(0.8, 'blue'); grad.addColorStop(1, 'violet');
+                    ctx.fillStyle = grad;
+                } else {
+                    ctx.fillStyle = pStyle.color;
+                }
+                ctx.strokeStyle = pStyle.border;
+                ctx.lineWidth = 4;
+                ctx.fillRect(p.x, 0, PIPE_WIDTH, p.h);
+                ctx.strokeRect(p.x, 0, PIPE_WIDTH, p.h);
+                ctx.fillRect(p.x, p.h + PIPE_GAP, PIPE_WIDTH, wh - (p.h + PIPE_GAP));
+                ctx.strokeRect(p.x, p.h + PIPE_GAP, PIPE_WIDTH, wh - (p.h + PIPE_GAP));
+            });
+            ctx.font = `${player.s}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.save();
+            ctx.translate(player.x, player.y);
+            ctx.rotate(Math.min(Math.PI/4, Math.max(-Math.PI/4, player.v * 0.05)));
+            ctx.fillText(emojis[selectedEmoji].char, 0, 0);
+            ctx.restore();
+        }
+
+        function endGame() {
+            gameState = 'GAMEOVER';
+            stopBackgroundMusic();
+            playSound(220, 'sawtooth', 0.5);
+            const xpGain = score * 10;
+            xp += xpGain;
+            const oldLevel = level;
+            level = Math.floor(xp / 100);
+            if (level > oldLevel) {
+                pass_rewards.forEach(r => {
+                    if (r.level > oldLevel && r.level <= level) {
+                        if (r.type === 'diamond') totalDiamonds += r.amount;
+                    }
+                });
+            }
+            if (score > bestScore) bestScore = score;
+            saveData();
+            document.getElementById('gameover-title').textContent = playerNickname + " a perdu !";
+            document.getElementById('final-score').textContent = score;
+            document.getElementById('game-best-score').textContent = bestScore;
+            document.getElementById('game-final-diamonds').textContent = totalDiamonds;
+            document.getElementById('game-xp-gain').textContent = xpGain;
+            gameoverScreen.classList.add('active');
+        }
+
+        // EVENTS
+        window.addEventListener('resize', resize);
+        window.addEventListener('touchstart', (e) => {
+            if (gameState === 'SPLASH') {
+                gameState = 'MENU';
+                splashScreen.classList.add('hidden');
+                menuScreen.classList.remove('hidden');
+                loadPlayerData();
+                initUI();
+                playBackgroundMusic();
+                return;
+            }
+            if (gameState === 'PLAYING') {
+                player.v = player.j;
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        document.getElementById('play-btn').onclick = startGame;
+        document.getElementById('shop-btn').onclick = () => { initUI(); shopModal.classList.add('active'); };
+        document.getElementById('close-shop').onclick = () => shopModal.classList.remove('active');
+        document.getElementById('pass-btn').onclick = () => { initUI(); passModal.classList.add('active'); };
+        document.getElementById('close-pass').onclick = () => passModal.classList.remove('active');
+        document.getElementById('settings-btn').onclick = () => settingsModal.classList.add('active');
+        document.getElementById('close-settings').onclick = () => settingsModal.classList.remove('active');
+        
+        soundToggle.onchange = (e) => {
+            soundEnabled = e.target.checked;
+            saveData();
+            if (soundEnabled) playBackgroundMusic();
+            else stopBackgroundMusic();
+        };
+
+        logoutBtn.onclick = () => {
+            saveData();
+            currentAccessCode = null;
+            localStorage.removeItem('flappyEmojiCurrentCode');
+            gameState = 'LOGIN';
+            menuScreen.classList.add('hidden');
+            loginScreen.classList.remove('hidden');
+            stopBackgroundMusic();
+            accessCodeInput.value = '';
+            nicknameInput.value = '';
+            nicknameInput.disabled = false;
+            loginError.classList.remove('show');
+        };
+
+        document.getElementById('retry-btn').onclick = startGame;
+        document.getElementById('menu-btn-over').onclick = () => {
+            gameState = 'MENU';
+            gameScreen.classList.remove('active');
+            menuScreen.classList.remove('hidden');
+            initUI();
+            playBackgroundMusic();
+        };
+
+        resize();
+        
+        if (currentAccessCode && VALID_CODES.includes(currentAccessCode)) {
+            loginScreen.classList.add('hidden');
+            splashScreen.classList.remove('hidden');
+            gameState = 'SPLASH';
+            loadPlayerData();
+        }
+    </script>
+</body>
+</html>
